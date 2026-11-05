@@ -1,0 +1,33 @@
+// ForgeGradle 2.1 (Minecraft 1.8.9). Requer JDK 8 para o Gradle 2.14 do wrapper.
+// ATENCAO: o jcenter() foi desativado; se o resolve falhar, aponte para um espelho
+// (ex.: https://maven.minecraftforge.net e um mirror do jcenter) ou use um template atual de mod 1.8.9.
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()   // somente leitura, mas ainda serve dependencias antigas do ForgeGradle 2.1
+        maven { name = "forge"; url = "https://maven.minecraftforge.net" }
+        maven { name = "sonatype"; url = "https://oss.sonatype.org/content/repositories/snapshots/" }
+    }
+    dependencies { classpath 'net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT' }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+version = "0.1.0-proto"
+group = "com.framegen"
+archivesBaseName = "FrameGen-1.8.9"
+sourceCompatibility = targetCompatibility = '1.8'
+
+minecraft {
+    version = "1.8.9-11.15.1.2318-1.8.9"
+    runDir = "run"
+    mappings = "stable_22"
+}
+
+processResources {
+    inputs.property "version", project.version
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version': project.version, 'mcversion': project.minecraft.version
+    }
+    from(sourceSets.main.resources.srcDirs) { exclude 'mcmod.info' }
+}

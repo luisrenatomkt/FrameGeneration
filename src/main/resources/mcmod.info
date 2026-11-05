@@ -1,0 +1,8 @@
+[{
+  "modid": "framegen",
+  "name": "FrameGen 1.8.9",
+  "description": "Geracao de frames intermediarios (block matching + interpolacao compensada em movimento). Exclusivamente visual.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "authorList": ["FrameGen"]
+}]
