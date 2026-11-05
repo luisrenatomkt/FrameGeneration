@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public final class FrameGenOverlay {
     @SubscribeEvent
     public void onText(RenderGameOverlayEvent.Post e) {
-        if (e.type != RenderGameOverlayEvent.ElementType.TEXT || !FrameGenConfig.overlay) return;
+        if (e.type != RenderGameOverlayEvent.ElementType.ALL || !FrameGenConfig.overlay) return;
         Minecraft mc = Minecraft.getMinecraft();
         String[] l = {
             "FRAMEGEN 1.8.9 (prototipo)",

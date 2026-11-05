@@ -12,7 +12,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = "0.1.0-proto"
+version = "0.1.2-proto"
 group = "com.framegen"
 archivesBaseName = "FrameGen-1.8.9"
 sourceCompatibility = targetCompatibility = '1.8'

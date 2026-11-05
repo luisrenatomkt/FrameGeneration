@@ -31,7 +31,8 @@ void main() {
         vec2 sp = (floor(gl_FragCoord.xy) * uBlock + (vec2(gx, gy) + 0.5) * (uBlock * 0.25));
         cur[i] = texture2D(uCurLow, sp * uInvLow).r;
     }
-    float best = sad(vec2(0.0));
+    float zero = sad(vec2(0.0));
+    float best = zero * 0.85 - 0.004; // vetor so vale se for CLARAMENTE melhor que parado
     vec2 bd = vec2(0.0);
     for (int a = -4; a <= 4; a++) {
         for (int b = -4; b <= 4; b++) {
@@ -52,5 +53,7 @@ void main() {
         }
     }
     float err = sad(bd);
+    if (best >= zero * 0.85 - 0.004 && length(bd) == 0.0) err = zero;
+    if (length(bd) > 0.0 && err > zero * 0.85) { bd = vec2(0.0); err = zero; }
     gl_FragColor = vec4(clamp(bd / uReach, -1.0, 1.0) * 0.5 + 0.5, clamp(err * 4.0, 0.0, 1.0), 1.0);
 }

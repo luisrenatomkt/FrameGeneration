@@ -174,7 +174,7 @@ public final class FrameGenEngine {
             GL20.glUniform1f(pMotion.loc("uRadius"), radius);
             GL20.glUniform1f(pMotion.loc("uStep"), step);
             GL20.glUniform1f(pMotion.loc("uReach"), reach());
-            GL20.glUniform1f(pMotion.loc("uLambda"), 0.004f);
+            GL20.glUniform1f(pMotion.loc("uLambda"), 0.02f);
             bind(1, lowTex[lowIdx ^ 1]);
             bind(0, lowTex[lowIdx]);
             quad();

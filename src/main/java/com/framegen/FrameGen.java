@@ -33,7 +33,7 @@ import org.lwjgl.opengl.Display;
  *   o Minecraft entao apresenta o frame real normalmente.
  * Latencia: +1 frame real (interpolacao exige o frame futuro). Ver README.
  */
-@Mod(modid = FrameGen.MODID, name = "FrameGen 1.8.9", version = "0.1.0-proto",
+@Mod(modid = FrameGen.MODID, name = "FrameGen 1.8.9", version = "0.1.2-proto",
         acceptedMinecraftVersions = "[1.8.9]", acceptableRemoteVersions = "*")
 public class FrameGen {
     public static final String MODID = "framegen";
@@ -46,7 +46,8 @@ public class FrameGen {
     private final KeyBinding kMenu = new KeyBinding("FrameGen Menu", Keyboard.KEY_F7, "FrameGen");
     private final KeyBinding kMode = new KeyBinding("Cycle 2x/3x/4x", Keyboard.KEY_F6, "FrameGen");
 
-    private boolean capturedThisFrame, inSynthetic, glChecked, appliedVsync;
+    private boolean capturedThisFrame, inSynthetic, glChecked, loggedFirst;
+    private int appliedVsync = -1; private String lastState = "";
     private int failures, autoTick;
     private boolean permanentlyDisabled;
     private double lastX, lastY, lastZ; private float lastYaw; private int lastDim = Integer.MIN_VALUE, lastTicks;
@@ -129,6 +130,7 @@ public class FrameGen {
     public void onRenderTick(TickEvent.RenderTickEvent e) {
         if (e.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getMinecraft();
+        if (!state.equals(lastState)) { lastState = state; LOG.info("estado: {}", state); }
         SCHED.onRealFrame(System.nanoTime());
         boolean cap = capturedThisFrame; capturedThisFrame = false;
         if (!cap || mc.theWorld == null || mc.thePlayer == null) { SCHED.markCycleEnd(); return; }
@@ -137,6 +139,7 @@ public class FrameGen {
         if (mc.displayWidth != Display.getWidth() || mc.displayHeight != Display.getHeight()) { SCHED.markCycleEnd(); return; }
         try {
             applyVsync();
+            drainGlErrors("antes do pipeline (erro pendente de outro mod/OptiFine)");
             ENGINE.estimate();
             int m = FrameGenConfig.multiplier;
             long gap = SCHED.gapNs(m, FrameGenConfig.fpsLimit);
@@ -150,13 +153,24 @@ public class FrameGen {
             SCHED.markCycleEnd();
             // restaura o FBO do Minecraft para o resto do ciclo vanilla (que o desvincula e apresenta o frame real)
             mc.getFramebuffer().bindFramebuffer(false);
-            if (org.lwjgl.opengl.GL11.glGetError() != 0) throw new IllegalStateException("GL error pos-pipeline");
+            drainGlErrors("apos o pipeline (erro do FrameGen)");
             failures = 0; state = "ATIVO " + m + "x";
+            if (!loggedFirst) { loggedFirst = true; LOG.info("Primeiro frame gerado OK: {} {}x gap={}us", ENGINE.info(), m, gap / 1000); }
             autoQuality();
         } catch (Throwable t) {
-            LOG.error("geracao falhou", t);
+            LOG.error("geracao falhou (glError=" + org.lwjgl.opengl.GL11.glGetError() + ")", t);
             try { mc.getFramebuffer().bindFramebuffer(false); } catch (Throwable ignored) { }
             fail();
+        }
+    }
+
+    private int glErrLogged;
+    /** Esvazia a fila de erros GL. Erros pendentes de outros mods sao so registrados (max 5), nunca derrubam a geracao. */
+    private void drainGlErrors(String where) {
+        int e, n = 0;
+        while ((e = org.lwjgl.opengl.GL11.glGetError()) != 0 && n < 16) {
+            n++;
+            if (glErrLogged < 5) { glErrLogged++; LOG.warn("GL error 0x{} {}", Integer.toHexString(e), where); }
         }
     }
 
@@ -170,7 +184,8 @@ public class FrameGen {
     }
 
     private void applyVsync() {
-        if (!appliedVsync || Display.isCreated()) { Display.setVSyncEnabled(FrameGenConfig.vsync); appliedVsync = true; }
+        int want = FrameGenConfig.vsync ? 1 : 0;
+        if (appliedVsync != want) { Display.setVSyncEnabled(FrameGenConfig.vsync); appliedVsync = want; LOG.info("VSync -> {}", FrameGenConfig.vsync); }
     }
 
     /** Modo automatico: baixa qualidade se a taxa apresentada ficar bem abaixo da meta; sobe se houver folga. */
